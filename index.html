@@ -1,0 +1,598 @@
+<!doctype html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>永續交通路網｜Dijkstra 六關練習</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f1f3f2;color:#182725;font:16px/1.55 system-ui,sans-serif}main{width:min(1080px,calc(100% - 26px));margin:24px auto}header{margin-bottom:16px}header p,h1,h2{margin:0}header p{color:#465b53}h1{font-size:clamp(1.6rem,5vw,2.5rem)}h2{font-size:1.15rem}.grid{display:grid;grid-template-columns:minmax(0,1fr);gap:14px;align-items:start}.card{background:white;border:1px solid #d4dfd9;border-radius:12px;padding:15px}.graph{width:100%;display:block;max-height:510px}.road{stroke:#171717;stroke-width:2.6;fill:none}.road.tree{stroke:#087356;stroke-width:4}.weight,.vertex{fill:#111;text-anchor:middle;font-family:"Cambria Math","Times New Roman",serif;font-size:21px}.vertex{font-style:italic}.node{stroke:#171717;stroke-width:2.6;fill:#fff}.node.source{fill:#ffec9c;stroke:#754900;stroke-width:3.5}.source-ring{fill:none;stroke:#754900;stroke-width:1.5;pointer-events:none}.source-tag{fill:#754900;font:700 13px system-ui,sans-serif;text-anchor:middle;pointer-events:none}.vertex{fill:#111;pointer-events:none}.node.settled:not(.source){fill:#d9f0e5}.actions{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px}button,input,select{font:inherit;color:inherit;border:1px solid #a6b8af;border-radius:6px;background:#fff;min-height:40px}button{cursor:pointer;padding:6px 10px}button.primary{background:#12604d;color:white;border-color:#12604d}button:disabled{opacity:.5;cursor:default}button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid #12604d;outline-offset:2px}table{border-collapse:collapse;width:100%}td,th{text-align:center;padding:4px;border-bottom:1px solid #e1e7e3}input,select{width:100%;max-width:90px;padding:3px 6px;text-align:center}tr.good{background:#e4f4ec}tr.retry{background:#fff0da}.note{color:#465b53;margin:.4rem 0}.solution{margin-top:10px}.solution ol{margin:.35rem 0;padding-left:1.5rem}[hidden]{display:none!important}@media(max-width:730px){.grid{grid-template-columns:1fr}main{margin-top:14px}}@media print{body{background:white}.grid{display:block}.card{border:0}.interactive{display:none!important}.graph{max-height:430px}}
+#levels{margin:0 0 14px}#levels button[aria-current=true]{background:#12604d;color:white;border-color:#12604d}#levels button{min-height:44px}@media(max-width:550px){#levels button{flex:1 1 30%}}
+.node.current{fill:#ffedbb;stroke:#8a5600;stroke-width:3.5}.road.updated{stroke:#a45d04;stroke-width:4.5}.badge rect{fill:#fff;stroke:#8d9a97;stroke-width:1}.badge text{fill:#182725;text-anchor:middle;font:600 13px system-ui,sans-serif}.badge.updated rect,.badge.current rect{fill:#ffedbb;stroke:#a45d04}.badge.fixed rect{fill:#e4f4ec;stroke:#087356}.badge.fixed.current rect{fill:#ffedbb;stroke:#a45d04}
+.edit-node{cursor:pointer}.edit-node:focus-visible .node,.edit-node:hover .node{stroke:#087356;stroke-width:4}.edit-node:focus{outline:none}.badge{pointer-events:none}.badge.student{pointer-events:auto;cursor:pointer}.badge.student rect{stroke:#647973}.badge.student text{fill:#173f36}
+#nodeEditor{border:1px solid #a6b8af;background:#f4faf7;border-radius:8px;padding:8px;margin:8px 0}
+#nodeForm{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center}
+#editorTitle{font-weight:700}#editorStatus{margin:.25rem 0 0}
+.edit-node.selected .node{fill:#ffedbb;stroke:#8a5600;stroke-width:4}
+.edit-node.candidate .node{stroke:#087356;stroke-width:3.5}
+.road.draft{stroke:#087356;stroke-width:4;stroke-dasharray:5 3}
+@media print{.badge,#studentLegend{display:none!important}}
+.road.chosen{stroke:#bd252f;stroke-width:4.5}.road.correct{stroke:#087356;stroke-width:5}.road.incorrect{stroke:#995300;stroke-width:4.5;stroke-dasharray:6 3}
+#checkAnswer{min-height:44px;touch-action:manipulation}#feedback:not(:empty){padding:8px 10px;background:#eaf3ff;border-radius:6px;font-weight:600}
+#customSettings{margin-bottom:14px}#customSettings .actions label{display:flex;align-items:center;gap:6px}#customRoads{display:block;width:100%;min-height:104px;padding:8px;resize:vertical;border:1px solid #a6b8af;border-radius:6px;font:inherit}#customStatus.error{color:#9b2528}
+#graphViewport{overflow-x:auto}#graphViewport.expanded .graph{min-width:calc(var(--graph-width) * 1.05);max-height:none}.graph:not(.expanded .graph){height:auto}.weight,.source-tag{paint-order:stroke;stroke:#fff;stroke-width:3px;stroke-linejoin:round}#zoomGraph{display:none;min-height:44px}#nodeForm button,#nodeForm select,#checkPanel button{min-height:44px}
+@media(max-width:730px){#zoomGraph{display:inline-block;margin:4px 0}#levels button{min-width:0}#customCount,#customStart,#customRoads{font-size:16px}}
+@media print{#zoomGraph{display:none!important}#graphViewport.expanded .graph{min-width:0}}
+.edge-arrow{display:none;fill:#bd252f;stroke:white;stroke-width:1.1;stroke-linejoin:round;pointer-events:none}
+.road.chosen[data-direction="forward"]~.edge-arrow.forward,.road.chosen[data-direction="reverse"]~.edge-arrow.reverse{display:inline}
+.road.correct~.edge-arrow{fill:#087356}.road.incorrect~.edge-arrow{fill:#995300}
+.badge text{font-size:13px}.weight{font-size:19px}.edge-arrow{pointer-events:none}
+</style>
+</head>
+<body>
+<main>
+<header>
+<p>探索永續 · SDG 11 永續城市與社區</p>
+<h1>永續交通路網</h1>
+</header>
+<nav id="levels" class="interactive actions" aria-label="選擇關卡"></nav>
+<section id="customSettings" class="card interactive" hidden>
+<h2>設定自訂題目</h2>
+<div class="actions">
+<label>頂點數 <input id="customCount" type="number" min="2" max="13" value="5" inputmode="numeric"></label>
+<label>套用時的起點 <select id="customStart"></select></label>
+</div>
+<p id="customHelp" class="note">每行輸入一條雙向道路，依序填兩個不同的頂點與行駛時間（1 到 999 的整數，單位為分鐘）。例如 a b 4 表示 a 與 b 之間的行駛時間為 4 分鐘。所有頂點都須能從起點到達。</p>
+<label for="customRoads">道路與權重</label>
+<textarea id="customRoads" aria-describedby="customHelp" spellcheck="false">a b 4
+a c 2
+b c 1
+b d 5
+c d 8
+c e 10
+d e 2</textarea>
+<div class="actions"><button id="buildCustom" class="primary" type="button">套用題目</button></div>
+<p id="customStatus" class="note" role="status"></p>
+</section>
+<div class="grid">
+<section class="card">
+<h2 id="levelTitle"></h2>
+<p id="scenario"></p>
+<div class="actions interactive"><label>本關起點 <select id="levelStart" aria-label="選擇本關起點"></select></label></div>
+<p id="task" class="note"></p>
+<p class="note">每條道路皆可雙向通行，邊上的數字表示通過該路段所需的時間（分鐘）。演算若遇到多個尚未確定的頂點並列最小暫定距離，會先確定字母排序較前的頂點。</p>
+<button id="zoomGraph" class="interactive" type="button" aria-pressed="false" aria-controls="graphViewport">放大路網</button>
+<div id="graphViewport">
+<svg id="graph" class="graph" viewBox="0 0 490 422" role="group" aria-labelledby="graph-title"><title id="graph-title">具有 13 個地點的雙向接駁路網</title></svg>
+</div>
+<div id="nodeEditor" class="interactive" hidden>
+<div id="nodeForm" role="group" aria-labelledby="editorTitle">
+<span id="editorTitle"></span>
+<label>前驅 <select id="editorParent" aria-label="前驅節點"></select></label>
+<button type="button" id="closeNode">收起</button>
+</div>
+<p id="editorStatus" class="note" role="status"></p>
+</div>
+
+<p id="studentLegend" class="note interactive">先點要更新的頂點，再從綠框標出的相鄰頂點中選一個作為前驅。標籤顯示「目前距離｜前驅」。從頂點沿著前驅逐步往回追，若能回到起點，目前距離就是沿途邊權的總和。尚未連回起點時顯示 ∞。<br>紅線表示已選的前驅邊，箭頭由前驅指向選擇它的頂點。若有標籤移到圖下方，前面的字母會指出對應的頂點或道路。檢查後，綠線表示該頂點已達最短距離，橙色虛線表示仍需調整前驅路線。</p>
+<div id="checkPanel" class="interactive"><button id="checkAnswer" class="primary" type="button">檢查答案</button> <button id="clearAnswer" type="button">清空</button><p id="feedback" class="note" role="status"></p></div>
+<details class="interactive"><summary>查看道路與行駛時間</summary><p id="roads" class="note"></p></details>
+<div class="interactive">
+<p id="graphLegend" class="note" hidden>標籤顯示「目前距離｜前驅」。綠底表示先前已確定的頂點，黃底表示本步剛確定的頂點，起點以黃底雙圈標示。橙線表示本步更新的前驅邊。</p>
+<div class="actions"><button type="button" id="previous" hidden>上一步</button><button type="button" id="next">逐步演算</button><button type="button" id="answer">顯示完整解答</button><button type="button" id="hide" hidden>收起解答</button></div>
+<div class="solution" id="solution" hidden>
+<p id="step" role="status"></p><p id="updates" class="note"></p>
+<table aria-label="Dijkstra 距離與前驅"><thead><tr><th>地點</th><th>目前距離</th><th>前驅節點</th><th>狀態</th></tr></thead><tbody id="trace"></tbody></table>
+</div>
+</div>
+</section>
+
+</div>
+
+</main>
+<script>
+'use strict';
+const $=id=>document.getElementById(id);
+const mathGlyphs={"a":"M-2.29 5.44 Q-3.81 5.44 -4.68 4.29 Q-5.55 3.15 -5.55 1.59 Q-5.55 0.06 -4.76 -1.59 Q-3.96 -3.25 -2.61 -4.34 Q-1.25 -5.44 0.30 -5.44 Q1.02 -5.44 1.58 -5.05 Q2.15 -4.67 2.46 -4.00 Q2.73 -4.96 3.52 -4.96 Q3.82 -4.96 4.02 -4.77 Q4.23 -4.59 4.23 -4.29 Q4.23 -4.22 4.22 -4.18 Q4.22 -4.15 4.21 -4.10 L2.53 2.60 Q2.37 3.31 2.37 3.77 Q2.37 4.80 3.06 4.80 Q3.81 4.80 4.20 3.85 Q4.59 2.90 4.86 1.64 Q4.91 1.50 5.05 1.50 L5.34 1.50 Q5.44 1.50 5.49 1.58 Q5.55 1.67 5.55 1.73 Q5.13 3.41 4.64 4.42 Q4.14 5.44 3.01 5.44 Q2.21 5.44 1.58 4.96 Q0.96 4.49 0.81 3.70 Q-0.74 5.44 -2.29 5.44 Z M-2.27 4.80 Q-1.41 4.80 -0.59 4.15 Q0.22 3.50 0.81 2.62 Q0.83 2.60 0.83 2.55 L2.12 -2.66 L2.15 -2.73 Q2.00 -3.58 1.53 -4.20 Q1.05 -4.82 0.25 -4.82 Q-0.56 -4.82 -1.26 -4.16 Q-1.96 -3.49 -2.44 -2.59 Q-2.91 -1.63 -3.33 0.04 Q-3.76 1.72 -3.76 2.65 Q-3.76 3.48 -3.40 4.14 Q-3.04 4.80 -2.27 4.80 Z","b":"M-1.39 8.46 Q-2.84 8.46 -3.65 7.33 Q-4.45 6.19 -4.45 4.66 Q-4.45 4.44 -4.34 3.79 Q-4.23 3.14 -4.23 2.99 L-1.91 -6.33 Q-1.82 -6.74 -1.79 -6.97 Q-1.79 -7.36 -3.35 -7.36 Q-3.59 -7.36 -3.59 -7.67 Q-3.58 -7.73 -3.53 -7.88 Q-3.49 -8.04 -3.43 -8.12 Q-3.37 -8.20 -3.25 -8.20 L-0.01 -8.46 Q0.28 -8.46 0.28 -8.15 L-1.50 -1.08 Q-0.14 -2.41 1.24 -2.41 Q2.26 -2.41 2.99 -1.87 Q3.73 -1.34 4.09 -0.46 Q4.45 0.42 4.45 1.42 Q4.45 2.58 4.00 3.82 Q3.55 5.05 2.75 6.11 Q1.96 7.17 0.89 7.82 Q-0.18 8.46 -1.39 8.46 Z M-1.34 7.83 Q-0.52 7.83 0.20 7.14 Q0.91 6.46 1.36 5.60 Q1.84 4.64 2.26 2.99 Q2.67 1.35 2.67 0.36 Q2.67 -0.49 2.31 -1.14 Q1.96 -1.79 1.18 -1.79 Q0.31 -1.79 -0.48 -1.15 Q-1.27 -0.52 -1.87 0.36 L-2.53 3.08 Q-2.92 4.60 -2.94 5.51 Q-2.94 6.41 -2.55 7.12 Q-2.16 7.83 -1.34 7.83 Z","c":"M-2.83 2.31 Q-2.83 3.35 -2.30 4.08 Q-1.76 4.80 -0.77 4.80 Q0.66 4.80 1.98 4.15 Q3.30 3.49 4.13 2.33 Q4.20 2.26 4.32 2.26 Q4.44 2.26 4.56 2.40 Q4.68 2.53 4.68 2.65 Q4.68 2.74 4.64 2.79 Q3.76 4.02 2.27 4.73 Q0.78 5.44 -0.81 5.44 Q-1.96 5.44 -2.84 4.89 Q-3.72 4.35 -4.20 3.43 Q-4.68 2.52 -4.68 1.37 Q-4.68 -0.25 -3.78 -1.84 Q-2.87 -3.43 -1.37 -4.44 Q0.13 -5.44 1.78 -5.44 Q2.86 -5.44 3.71 -4.92 Q4.58 -4.40 4.58 -3.37 Q4.58 -2.72 4.19 -2.25 Q3.82 -1.79 3.17 -1.79 Q2.78 -1.79 2.52 -2.03 Q2.26 -2.27 2.26 -2.66 Q2.26 -3.23 2.66 -3.62 Q3.08 -4.02 3.63 -4.02 L3.67 -4.02 Q3.39 -4.43 2.86 -4.62 Q2.33 -4.82 1.75 -4.82 Q0.35 -4.82 -0.71 -3.61 Q-1.76 -2.42 -2.30 -0.74 Q-2.83 0.93 -2.83 2.31 Z","d":"M-2.51 8.46 Q-4.03 8.46 -4.90 7.32 Q-5.77 6.17 -5.77 4.62 Q-5.77 3.08 -4.98 1.43 Q-4.18 -0.22 -2.82 -1.32 Q-1.47 -2.41 0.09 -2.41 Q0.79 -2.41 1.36 -2.02 Q1.93 -1.63 2.24 -0.97 L3.59 -6.33 Q3.69 -6.74 3.71 -6.97 Q3.71 -7.36 2.15 -7.36 Q1.91 -7.36 1.91 -7.67 Q1.92 -7.73 1.96 -7.88 Q2.00 -8.04 2.06 -8.12 Q2.13 -8.20 2.24 -8.20 L5.48 -8.46 Q5.77 -8.46 5.77 -8.15 L2.31 5.65 Q2.15 6.05 2.15 6.80 Q2.15 7.83 2.84 7.83 Q3.59 7.83 3.98 6.88 Q4.38 5.92 4.65 4.66 Q4.69 4.52 4.83 4.52 L5.13 4.52 Q5.22 4.52 5.28 4.61 Q5.34 4.69 5.34 4.76 Q4.92 6.43 4.42 7.45 Q3.92 8.46 2.79 8.46 Q1.99 8.46 1.37 7.99 Q0.74 7.51 0.59 6.73 Q-0.96 8.46 -2.51 8.46 Z M-2.49 7.83 Q-1.62 7.83 -0.81 7.18 Q0.00 6.53 0.59 5.65 Q0.62 5.63 0.62 5.56 L1.93 0.27 Q1.79 -0.58 1.31 -1.18 Q0.83 -1.79 0.03 -1.79 Q-0.78 -1.79 -1.48 -1.13 Q-2.17 -0.47 -2.65 0.43 Q-3.12 1.39 -3.55 3.07 Q-3.98 4.75 -3.98 5.67 Q-3.98 6.50 -3.62 7.17 Q-3.26 7.83 -2.49 7.83 Z","e":"M-0.86 5.44 Q-2.01 5.44 -2.87 4.84 Q-3.73 4.24 -4.19 3.23 Q-4.64 2.21 -4.64 1.09 Q-4.64 -0.62 -3.77 -2.13 Q-2.91 -3.63 -1.44 -4.53 Q0.04 -5.44 1.73 -5.44 Q2.76 -5.44 3.53 -4.91 Q4.30 -4.37 4.30 -3.37 Q4.30 -1.99 3.19 -1.32 Q2.09 -0.64 0.71 -0.49 Q-0.67 -0.33 -2.35 -0.33 L-2.42 -0.33 Q-2.81 1.10 -2.81 2.12 Q-2.81 3.19 -2.31 4.00 Q-1.82 4.80 -0.81 4.80 Q0.61 4.80 1.93 4.15 Q3.25 3.49 4.08 2.33 Q4.15 2.26 4.27 2.26 Q4.39 2.26 4.51 2.40 Q4.63 2.53 4.63 2.65 Q4.63 2.74 4.59 2.79 Q3.71 4.02 2.22 4.73 Q0.73 5.44 -0.86 5.44 Z M-2.28 -0.95 Q-0.89 -0.95 0.30 -1.08 Q1.48 -1.21 2.44 -1.73 Q3.40 -2.25 3.40 -3.35 Q3.40 -3.80 3.16 -4.13 Q2.91 -4.47 2.52 -4.64 Q2.13 -4.82 1.71 -4.82 Q0.69 -4.82 -0.13 -4.27 Q-0.94 -3.72 -1.47 -2.83 Q-2.00 -1.95 -2.28 -0.95 Z","f":"M-4.93 9.96 Q-4.48 10.30 -3.85 10.30 Q-2.99 10.30 -2.46 8.40 Q-2.23 7.49 -1.24 2.38 L-0.13 -3.50 L-2.20 -3.50 Q-2.43 -3.50 -2.43 -3.82 Q-2.34 -4.35 -2.13 -4.35 L0.02 -4.35 L0.30 -5.91 Q0.44 -6.63 0.55 -7.16 Q0.67 -7.68 0.81 -8.12 Q0.95 -8.56 1.21 -9.12 Q1.62 -9.90 2.32 -10.41 Q3.02 -10.92 3.82 -10.92 Q4.35 -10.92 4.85 -10.73 Q5.35 -10.53 5.67 -10.15 Q5.98 -9.76 5.98 -9.24 Q5.98 -8.62 5.58 -8.17 Q5.17 -7.72 4.60 -7.72 Q4.21 -7.72 3.94 -7.96 Q3.66 -8.21 3.66 -8.59 Q3.66 -9.12 4.02 -9.51 Q4.38 -9.90 4.90 -9.96 Q4.46 -10.30 3.80 -10.30 Q3.44 -10.30 3.12 -9.96 Q2.79 -9.62 2.70 -9.24 Q2.55 -8.62 2.03 -5.93 L1.74 -4.35 L4.21 -4.35 Q4.45 -4.35 4.45 -4.03 Q4.44 -3.97 4.40 -3.83 Q4.37 -3.68 4.30 -3.59 Q4.24 -3.50 4.14 -3.50 L1.57 -3.50 L0.46 2.35 Q0.25 3.63 -0.03 4.95 Q-0.30 6.27 -0.80 7.66 Q-1.29 9.05 -2.07 9.99 Q-2.84 10.92 -3.90 10.92 Q-4.71 10.92 -5.34 10.46 Q-5.98 10.00 -5.98 9.24 Q-5.98 8.62 -5.59 8.17 Q-5.20 7.72 -4.60 7.72 Q-4.20 7.72 -3.93 7.96 Q-3.66 8.20 -3.66 8.59 Q-3.66 9.10 -4.05 9.53 Q-4.42 9.96 -4.93 9.96 Z","g":"M-5.54 6.28 Q-5.54 5.69 -5.14 5.25 Q-4.74 4.81 -4.16 4.81 Q-3.77 4.81 -3.51 5.05 Q-3.25 5.29 -3.25 5.68 Q-3.25 6.11 -3.50 6.46 Q-3.74 6.80 -4.12 6.94 Q-3.48 7.14 -2.11 7.14 Q-1.01 7.14 -0.09 6.29 Q0.82 5.44 1.10 4.33 L1.79 1.52 Q0.49 2.84 -0.92 2.84 Q-1.95 2.84 -2.68 2.32 Q-3.41 1.79 -3.80 0.91 Q-4.19 0.03 -4.19 -0.96 Q-4.19 -2.06 -3.74 -3.26 Q-3.28 -4.47 -2.47 -5.50 Q-1.65 -6.53 -0.60 -7.15 Q0.46 -7.76 1.63 -7.76 Q2.33 -7.76 2.90 -7.38 Q3.46 -6.99 3.78 -6.35 Q4.02 -7.28 4.82 -7.28 Q5.12 -7.28 5.33 -7.10 Q5.54 -6.92 5.54 -6.62 Q5.54 -6.55 5.53 -6.51 Q5.53 -6.47 5.52 -6.43 L2.77 4.47 Q2.59 5.22 2.08 5.84 Q1.58 6.46 0.90 6.88 Q0.22 7.30 -0.59 7.53 Q-1.40 7.76 -2.15 7.76 Q-3.52 7.76 -4.53 7.50 Q-5.54 7.24 -5.54 6.28 Z M-0.87 2.22 Q0.67 2.22 2.16 0.11 L3.48 -5.13 Q3.32 -5.96 2.82 -6.55 Q2.33 -7.15 1.58 -7.15 Q0.78 -7.15 0.08 -6.49 Q-0.63 -5.84 -1.10 -4.94 Q-1.55 -4.07 -1.97 -2.45 Q-2.38 -0.83 -2.38 0.11 Q-2.38 0.93 -2.01 1.58 Q-1.63 2.22 -0.87 2.22 Z","h":"M-5.95 7.76 Q-5.95 7.62 -5.93 7.55 L-2.45 -6.33 Q-2.35 -6.74 -2.33 -6.97 Q-2.33 -7.36 -3.89 -7.36 Q-4.13 -7.36 -4.13 -7.67 Q-4.12 -7.73 -4.08 -7.88 Q-4.04 -8.04 -3.98 -8.12 Q-3.91 -8.20 -3.79 -8.20 L-0.56 -8.46 L-0.49 -8.46 Q-0.49 -8.44 -0.41 -8.39 Q-0.32 -8.36 -0.31 -8.34 Q-0.27 -8.23 -0.27 -8.15 L-2.14 -0.67 Q-0.66 -2.41 1.37 -2.41 Q2.21 -2.41 2.82 -2.12 Q3.44 -1.83 3.78 -1.24 Q4.13 -0.64 4.13 0.17 Q4.13 1.16 3.69 2.56 Q3.25 3.95 2.59 5.67 Q2.25 6.46 2.25 7.11 Q2.25 7.83 2.80 7.83 Q3.74 7.83 4.37 6.83 Q4.99 5.83 5.25 4.66 Q5.30 4.52 5.44 4.52 L5.73 4.52 Q5.83 4.52 5.89 4.59 Q5.95 4.65 5.95 4.73 Q5.95 4.76 5.92 4.81 Q5.71 5.67 5.29 6.51 Q4.88 7.35 4.24 7.91 Q3.61 8.46 2.76 8.46 Q1.92 8.46 1.32 7.88 Q0.72 7.30 0.72 6.47 Q0.72 6.02 0.91 5.53 Q1.59 3.73 2.04 2.31 Q2.49 0.89 2.49 -0.19 Q2.49 -0.88 2.22 -1.34 Q1.95 -1.79 1.32 -1.79 Q0.03 -1.79 -0.93 -1.00 Q-1.89 -0.21 -2.60 1.09 L-4.23 7.64 Q-4.32 8.00 -4.59 8.23 Q-4.86 8.46 -5.21 8.46 Q-5.52 8.46 -5.73 8.26 Q-5.95 8.05 -5.95 7.76 Z","i":"M-2.00 6.08 Q-2.00 5.63 -1.81 5.14 L0.13 -0.03 Q0.45 -0.91 0.45 -1.47 Q0.45 -2.19 -0.08 -2.19 Q-1.03 -2.19 -1.64 -1.21 Q-2.26 -0.23 -2.55 0.98 Q-2.60 1.13 -2.75 1.13 L-3.03 1.13 Q-3.23 1.13 -3.23 0.91 L-3.23 0.84 Q-2.84 -0.59 -2.05 -1.70 Q-1.25 -2.81 -0.03 -2.81 Q0.82 -2.81 1.42 -2.24 Q2.01 -1.68 2.01 -0.82 Q2.01 -0.37 1.81 0.12 L-0.14 5.28 Q-0.47 6.08 -0.47 6.72 Q-0.47 7.43 0.09 7.43 Q1.02 7.43 1.65 6.43 Q2.28 5.43 2.53 4.27 Q2.58 4.13 2.72 4.13 L3.02 4.13 Q3.11 4.13 3.17 4.19 Q3.23 4.26 3.23 4.34 Q3.23 4.36 3.21 4.41 Q2.88 5.77 2.06 6.92 Q1.25 8.07 0.04 8.07 Q-0.80 8.07 -1.40 7.49 Q-2.00 6.91 -2.00 6.08 Z M0.71 -6.74 Q0.71 -7.25 1.13 -7.66 Q1.55 -8.07 2.05 -8.07 Q2.47 -8.07 2.73 -7.82 Q2.99 -7.57 2.99 -7.18 Q2.99 -6.64 2.56 -6.23 Q2.14 -5.83 1.62 -5.83 Q1.24 -5.83 0.97 -6.09 Q0.71 -6.36 0.71 -6.74 Z","j":"M-4.93 8.88 Q-4.93 8.29 -4.53 7.87 Q-4.13 7.44 -3.54 7.44 Q-3.15 7.44 -2.89 7.68 Q-2.63 7.92 -2.63 8.31 Q-2.63 8.76 -2.92 9.13 Q-3.20 9.50 -3.63 9.62 Q-3.21 9.77 -2.79 9.77 Q-1.77 9.77 -1.02 8.83 Q-0.27 7.89 0.04 6.71 L2.30 -2.31 Q2.46 -3.00 2.46 -3.48 Q2.46 -4.52 1.75 -4.52 Q0.69 -4.52 -0.10 -3.56 Q-0.89 -2.60 -1.38 -1.35 Q-1.43 -1.20 -1.57 -1.20 L-1.85 -1.20 Q-2.05 -1.20 -2.05 -1.42 L-2.05 -1.49 Q-1.51 -2.93 -0.52 -4.03 Q0.48 -5.13 1.79 -5.13 Q2.79 -5.13 3.43 -4.51 Q4.07 -3.89 4.07 -2.93 Q4.07 -2.59 4.00 -2.25 L1.72 6.87 Q1.48 7.84 0.78 8.65 Q0.09 9.46 -0.87 9.93 Q-1.83 10.39 -2.84 10.39 Q-3.65 10.39 -4.29 10.00 Q-4.93 9.62 -4.93 8.88 Z M2.66 -9.07 Q2.66 -9.60 3.07 -10.00 Q3.48 -10.39 4.00 -10.39 Q4.40 -10.39 4.67 -10.14 Q4.93 -9.89 4.93 -9.51 Q4.93 -8.97 4.51 -8.56 Q4.08 -8.16 3.56 -8.16 Q3.17 -8.16 2.92 -8.43 Q2.66 -8.70 2.66 -9.07 Z","k":"M-5.44 7.76 Q-5.44 7.62 -5.42 7.55 L-1.94 -6.33 Q-1.85 -6.74 -1.82 -6.97 Q-1.82 -7.36 -3.38 -7.36 Q-3.63 -7.36 -3.63 -7.67 Q-3.62 -7.73 -3.58 -7.88 Q-3.53 -8.04 -3.47 -8.12 Q-3.41 -8.20 -3.29 -8.20 L-0.05 -8.46 L0.02 -8.46 Q0.02 -8.44 0.10 -8.39 Q0.18 -8.36 0.19 -8.34 Q0.24 -8.23 0.24 -8.15 L-2.28 1.88 Q-1.41 1.51 -0.10 0.15 Q1.22 -1.22 1.97 -1.81 Q2.71 -2.41 3.84 -2.41 Q4.51 -2.41 4.97 -1.96 Q5.44 -1.50 5.44 -0.83 Q5.44 -0.41 5.27 -0.05 Q5.09 0.31 4.77 0.53 Q4.46 0.75 4.04 0.75 Q3.65 0.75 3.38 0.51 Q3.12 0.27 3.12 -0.12 Q3.12 -0.69 3.53 -1.08 Q3.93 -1.48 4.51 -1.48 Q4.27 -1.79 3.79 -1.79 Q3.08 -1.79 2.41 -1.38 Q1.75 -0.97 0.98 -0.20 Q0.22 0.56 -0.42 1.20 Q-1.05 1.84 -1.59 2.17 Q-0.17 2.33 0.87 2.91 Q1.91 3.49 1.91 4.69 Q1.91 4.93 1.82 5.31 Q1.61 6.21 1.61 6.75 Q1.61 7.83 2.35 7.83 Q3.22 7.83 3.67 6.88 Q4.12 5.93 4.41 4.66 Q4.46 4.52 4.61 4.52 L4.89 4.52 Q4.99 4.52 5.05 4.58 Q5.11 4.64 5.11 4.73 Q5.11 4.76 5.09 4.81 Q4.19 8.46 2.30 8.46 Q1.62 8.46 1.10 8.15 Q0.58 7.83 0.30 7.28 Q0.02 6.74 0.02 6.06 Q0.02 5.67 0.12 5.26 Q0.19 4.98 0.19 4.73 Q0.19 3.81 -0.63 3.33 Q-1.45 2.85 -2.50 2.74 L-3.72 7.64 Q-3.82 8.00 -4.09 8.23 Q-4.36 8.46 -4.70 8.46 Q-5.01 8.46 -5.23 8.26 Q-5.44 8.05 -5.44 7.76 Z","m":"M-8.68 4.76 Q-8.68 4.62 -8.66 4.54 L-6.87 -2.61 Q-6.69 -3.28 -6.69 -3.79 Q-6.69 -4.82 -7.39 -4.82 Q-8.14 -4.82 -8.51 -3.92 Q-8.87 -3.02 -9.21 -1.65 Q-9.21 -1.58 -9.28 -1.54 Q-9.35 -1.50 -9.41 -1.50 L-9.69 -1.50 Q-9.77 -1.50 -9.83 -1.59 Q-9.89 -1.68 -9.89 -1.75 Q-9.63 -2.79 -9.39 -3.51 Q-9.15 -4.24 -8.64 -4.84 Q-8.13 -5.44 -7.37 -5.44 Q-6.47 -5.44 -5.78 -4.87 Q-5.09 -4.30 -5.09 -3.42 Q-4.37 -4.36 -3.41 -4.90 Q-2.45 -5.44 -1.37 -5.44 Q-0.23 -5.44 0.59 -4.86 Q1.42 -4.28 1.42 -3.21 Q2.15 -4.26 3.14 -4.84 Q4.14 -5.44 5.31 -5.44 Q6.55 -5.44 7.30 -4.76 Q8.06 -4.09 8.06 -2.85 Q8.06 -1.86 7.62 -0.47 Q7.18 0.93 6.53 2.65 Q6.19 3.48 6.19 4.09 Q6.19 4.80 6.75 4.80 Q7.69 4.80 8.31 3.80 Q8.93 2.79 9.19 1.64 Q9.26 1.50 9.39 1.50 L9.67 1.50 Q9.76 1.50 9.83 1.56 Q9.89 1.63 9.89 1.71 Q9.89 1.73 9.87 1.78 Q9.54 3.14 8.72 4.29 Q7.91 5.44 6.69 5.44 Q5.85 5.44 5.25 4.86 Q4.65 4.28 4.65 3.45 Q4.65 3.02 4.85 2.51 Q5.53 0.70 5.98 -0.72 Q6.43 -2.13 6.43 -3.21 Q6.43 -3.88 6.16 -4.35 Q5.89 -4.82 5.26 -4.82 Q3.95 -4.82 2.99 -4.01 Q2.03 -3.21 1.33 -1.89 Q1.28 -1.65 1.25 -1.52 L-0.29 4.64 Q-0.38 4.97 -0.67 5.20 Q-0.95 5.44 -1.30 5.44 Q-1.58 5.44 -1.80 5.25 Q-2.02 5.06 -2.02 4.76 Q-2.02 4.62 -1.99 4.54 L-0.46 -1.57 Q-0.21 -2.55 -0.21 -3.21 Q-0.21 -3.88 -0.49 -4.35 Q-0.76 -4.82 -1.42 -4.82 Q-2.30 -4.82 -3.04 -4.43 Q-3.77 -4.04 -4.33 -3.41 Q-4.88 -2.77 -5.33 -1.89 L-6.96 4.64 Q-7.04 4.97 -7.33 5.20 Q-7.62 5.44 -7.97 5.44 Q-8.26 5.44 -8.47 5.25 Q-8.68 5.06 -8.68 4.76 Z","n":"M-5.36 4.76 Q-5.36 4.62 -5.34 4.54 L-3.55 -2.61 Q-3.37 -3.28 -3.37 -3.79 Q-3.37 -4.82 -4.07 -4.82 Q-4.82 -4.82 -5.18 -3.92 Q-5.55 -3.02 -5.89 -1.65 Q-5.89 -1.58 -5.96 -1.54 Q-6.03 -1.50 -6.09 -1.50 L-6.37 -1.50 Q-6.45 -1.50 -6.51 -1.59 Q-6.57 -1.68 -6.57 -1.75 Q-6.31 -2.79 -6.07 -3.51 Q-5.83 -4.24 -5.32 -4.84 Q-4.81 -5.44 -4.05 -5.44 Q-3.15 -5.44 -2.46 -4.87 Q-1.76 -4.30 -1.76 -3.42 Q-1.05 -4.36 -0.09 -4.90 Q0.87 -5.44 1.95 -5.44 Q2.81 -5.44 3.43 -5.15 Q4.05 -4.85 4.39 -4.26 Q4.74 -3.67 4.74 -2.85 Q4.74 -1.86 4.30 -0.47 Q3.86 0.93 3.20 2.65 Q2.87 3.43 2.87 4.09 Q2.87 4.80 3.41 4.80 Q4.35 4.80 4.98 3.80 Q5.61 2.79 5.87 1.64 Q5.91 1.50 6.07 1.50 L6.35 1.50 Q6.44 1.50 6.50 1.56 Q6.57 1.62 6.57 1.71 Q6.57 1.73 6.55 1.78 Q6.22 3.14 5.40 4.29 Q4.59 5.44 3.37 5.44 Q2.53 5.44 1.93 4.86 Q1.33 4.28 1.33 3.45 Q1.33 3.00 1.52 2.51 Q1.82 1.72 2.21 0.63 Q2.61 -0.46 2.86 -1.45 Q3.11 -2.45 3.11 -3.21 Q3.11 -3.88 2.83 -4.35 Q2.56 -4.82 1.90 -4.82 Q1.03 -4.82 0.29 -4.43 Q-0.45 -4.04 -1.00 -3.41 Q-1.55 -2.77 -2.01 -1.89 L-3.64 4.64 Q-3.72 4.97 -4.01 5.20 Q-4.30 5.44 -4.65 5.44 Q-4.94 5.44 -5.15 5.25 Q-5.36 5.06 -5.36 4.76 Z","l":"M-2.62 6.25 Q-2.62 6.17 -2.60 6.04 Q-2.58 5.89 -2.57 5.76 Q-2.55 5.63 -2.55 5.56 L0.43 -6.33 Q0.52 -6.74 0.55 -6.97 Q0.55 -7.36 -1.01 -7.36 Q-1.25 -7.36 -1.25 -7.67 Q-1.24 -7.73 -1.19 -7.88 Q-1.15 -8.04 -1.09 -8.12 Q-1.03 -8.20 -0.91 -8.20 L2.33 -8.46 Q2.62 -8.46 2.62 -8.15 L-0.84 5.65 Q-1.01 6.04 -1.01 6.80 Q-1.01 7.83 -0.31 7.83 Q0.43 7.83 0.80 6.91 Q1.17 5.99 1.46 4.66 Q1.51 4.52 1.66 4.52 L1.94 4.52 Q2.03 4.52 2.10 4.60 Q2.16 4.67 2.16 4.76 Q1.88 5.92 1.65 6.59 Q1.42 7.27 0.92 7.87 Q0.42 8.46 -0.36 8.46 Q-1.32 8.46 -1.97 7.84 Q-2.62 7.22 -2.62 6.25 Z"};
+const levels=[
+  {title:'河岸自行車道', setting:'找出從所選起點到各處河岸入口的最短騎乘時間。', start:'a', points:{a:[35,110],b:[140,45],c:[140,175],d:[245,110]},
+    edges:[['ab',2],['ac',6],['bc',2],['bd',7],['cd',3]]},
+  {title:'綠色通學路網', setting:'比較從所選起點前往社區各站的步行時間。', start:'a', points:{a:[40,100],b:[145,40],c:[145,180],d:[255,40],e:[255,180],f:[360,100]},
+    edges:[['ab',4],['ac',2],['bc',3],['bd',3],['ce',5],['de',1],['df',7],['ef',3]]},
+  {title:'共享單車接駁', setting:'替各站安排從所選起點出發最省時的單車接駁路線。', start:'c', points:{a:[40,125],b:[145,45],c:[145,195],d:[255,45],e:[255,195],f:[365,45],g:[365,195]},
+    edges:[['ab',3],['ac',8],['bc',3],['bd',6],['ce',2],['be',2],['de',4],['df',2],['eg',7],['fg',2]]},
+  {title:'社區電動接駁', setting:'找出從所選起點到各站的最短路徑，並用前驅邊畫出最短路徑樹。', start:'a', points:{a:[40,145],b:[145,40],c:[145,145],d:[145,250],e:[260,40],f:[260,145],g:[260,250],h:[370,145]},
+    edges:[['ab',4],['ac',9],['ad',7],['bc',2],['cd',1],['be',7],['ce',3],['cf',7],['cg',4],['dg',2],['ef',2],['fg',3],['eh',8],['fh',3],['gh',7]]},
+  {title:'循環物資配送', setting:'規劃從所選起點前往各社區據點的配送路線。請留意哪些頂點的暫定距離可以更新。', start:'b', points:{a:[130,40],b:[245,40],c:[360,40],d:[40,145],e:[130,145],f:[245,145],g:[360,145],h:[40,250],i:[130,250],j:[245,250],k:[360,250]},
+    edges:[['ab',9],['bc',3],['ad',4],['ae',2],['bf',9],['cg',2],['de',7],['ef',3],['fg',2],['dh',3],['ei',4],['fj',5],['gk',11],['hi',2],['ij',1],['jk',2],['di',4],['ej',2],['fk',4]]},
+  {title:'低碳接駁路網', setting:'求出從所選起點到全部 13 個地點的最短時間，並找出最短路徑樹。', start:'b', points:{a:[234,42],b:[334,42],c:[434,42],d:[134,142],e:[234,142],f:[334,142],g:[434,142],h:[34,242],i:[134,242],j:[234,242],k:[334,242],m:[34,342],n:[134,342]},
+    edges:[
+      ['ab',12,0,-17],['bc',2,0,-17],['ad',4,-15,-12],['ae',4,-15,0],['bf',9,-15,0],['cg',3,-15,0],
+      ['de',6,0,-16],['ef',4,0,-16],['fg',2,0,-16],['dh',6,-14,-13],['di',6,-15,0],['ej',3,-15,0],
+      ['fk',2,-15,0],['gk',7,-14,-15],['hi',2,0,-16],['ij',5,0,-16],['jk',4,0,-16],['hm',5,-15,0],
+      ['in',3,-15,0],['kn',5,-14,-15],['mn',12,0,-16],['km',20]
+    ]}
+];
+const customIndex=levels.length;
+const customLetters='abcdefghijklm';
+function buildCustomLevel(count,source,roads){
+  if(!Number.isInteger(count) || count<2 || count>customLetters.length) throw new Error('頂點數請填 2 到 13 的整數。');
+  const names=[...customLetters.slice(0,count)];
+  if(!names.includes(source)) throw new Error('請選擇起點。');
+  const adjacent=Object.fromEntries(names.map(v=>[v,[]]));
+  const seenEdges=new Set();
+  const customEdges=[];
+  roads.split(/\r?\n/).forEach((line,index)=>{
+    if(!line.trim()) return;
+    const [a,b,c,...extra]=line.trim().toLowerCase().split(/[\s,，]+/);
+    const weight=Number(c);
+    const row='第 '+(index+1)+' 行';
+    if(extra.length || !names.includes(a) || !names.includes(b) || a===b || !/^\d+$/.test(c ?? '') || weight<1 || weight>999){
+      throw new Error(row+'請填兩個不同的有效頂點，以及 1 到 999 的整數權重。');
+    }
+    const edge=key(a,b);
+    if(seenEdges.has(edge)) throw new Error(row+'的道路重複輸入。');
+    seenEdges.add(edge);
+    adjacent[a].push(b);
+    adjacent[b].push(a);
+    customEdges.push([edge,weight]);
+  });
+  const reachable=new Set([source]);
+  for(const v of reachable) for(const u of adjacent[v]) reachable.add(u);
+  if(reachable.size!==count) throw new Error('從起點無法到達以下頂點：'+names.filter(v=>!reachable.has(v)).join('、')+'。');
+  const radius=Math.max(75,count*15);
+  const positions=Object.fromEntries(names.map((v,index)=>{
+    const angle=2*Math.PI*index/count-Math.PI/2;
+    return [v,[45+radius*(1+Math.cos(angle)),55+radius*(1+Math.sin(angle))]];
+  }));
+  return {title:'自訂題目',setting:'依照您設定的道路，找出以指定起點為根的最短路徑樹。',start:source,points:positions,edges:customEdges};
+}
+const progress=levels.map(level=>({start:level.start,byStart:{}}));
+function currentProgress(index){
+  const record=progress[index];
+  return record.byStart[record.start] ??= {answers:{},done:false};
+}
+let active=0,vertices,start,points,edges,steps,final;
+function neighbors(v){
+  return edges.filter(([pair])=>pair.includes(v)).map(([pair,weight])=>[pair.replace(v,''),weight]);
+}
+function dijkstra(){
+  const dist=Object.fromEntries(vertices.map(v=>[v,Infinity]));
+  const prev={},fixed=[],steps=[];
+  dist[start]=0;
+  steps.push({current:null,dist:{...dist},prev:{},fixed:[],updates:[],changed:[]});
+  while(fixed.length<vertices.length){
+    const current=vertices.filter(v=>!fixed.includes(v)).sort((a,b)=>dist[a]-dist[b])[0];
+    fixed.push(current);
+    const updates=[],changed=[];
+    for(const [v,w] of neighbors(current)){
+      const candidate=dist[current]+w;
+      if(candidate<dist[v]){
+        changed.push(v);
+        updates.push(v+'：'+format(dist[v])+' → '+candidate);
+        dist[v]=candidate;
+        prev[v]=current;
+      }
+    }
+    steps.push({current,dist:{...dist},prev:{...prev},fixed:[...fixed],updates,changed});
+  }
+  return steps;
+}
+const format=value=>Number.isFinite(value)?String(value):'∞';
+const edgeNodes=new Map(),nodeCircles=new Map(),badges=new Map();
+let parents={};
+const key=(a,b)=>[a,b].sort().join('');
+function svg(tag,attributes={},label='',parent=$('graph')){
+  const el=document.createElementNS('http://www.w3.org/2000/svg',tag);
+  for(const [name,value] of Object.entries(attributes)) el.setAttribute(name,value);
+  el.textContent=label;
+  parent.append(el);
+  return el;
+}
+function el(tag,text=''){
+  const node=document.createElement(tag);
+  node.textContent=text;
+  return node;
+}
+function createGraphLayout(width,height){
+  const occupied=Object.entries(points).map(([v,[x,y]])=>({x,y,w:v===start?48:40,h:v===start?48:40}));
+  const roadSamples=[];
+  let extra=0;
+  const overlaps=(a,b)=>Math.abs(a.x-b.x)<(a.w+b.w)/2 && Math.abs(a.y-b.y)<(a.h+b.h)/2;
+  function reserve(candidates,w,h,clearRoads){
+    for(const {x,y} of candidates){
+      const box={x,y,w,h};
+      if(x-w/2<2 || x+w/2>width-2 || y-h/2<-8 || y+h/2>height-2) continue;
+      if(occupied.some(other=>overlaps(box,other))) continue;
+      if(clearRoads && roadSamples.some(point=>overlaps(box,point))) continue;
+      occupied.push(box);
+      return box;
+    }
+    return null;
+  }
+  function label(candidates,w,h){
+    const placed=reserve(candidates,w,h,true);
+    if(placed) return placed;
+    const cell=112, columns=Math.max(1,Math.floor(width/cell));
+    const index=extra++;
+    return {x:cell*(index%columns+0.5),y:height+19+27*Math.floor(index/columns),overflow:true};
+  }
+  return {
+    roadSamples,
+    reserve,
+    label,
+    bottom:()=>extra?height+19+27*Math.ceil(extra/Math.max(1,Math.floor(width/112))):height
+  };
+}
+function radialCandidates(x,y,radii){
+  return radii.flatMap(radius=>[-45,-135,45,135,-90,0,90,180,-22.5,-67.5,22.5,67.5,112.5,157.5,-112.5,-157.5].map(degrees=>{
+    const angle=degrees*Math.PI/180;
+    return {x:x+radius*Math.cos(angle),y:y+radius*Math.sin(angle)};
+  }));
+}
+function selectLevel(index){
+  active=index;
+  $('customSettings').hidden=index!==customIndex;
+  parents=currentProgress(index).answers;
+  const level=levels[index];
+  ({points,edges}=level);
+  start=progress[index].start;
+  vertices=Object.keys(points);
+  $('levelStart').replaceChildren(...vertices.map(v=>{
+    const option=el('option',v);
+    option.value=v;
+    return option;
+  }));
+  $('levelStart').value=start;
+  steps=dijkstra();
+  final=steps.at(-1);
+  $('levelTitle').textContent=(index+1)+'. '+level.title;
+  $('scenario').textContent=level.setting;
+  $('task').textContent='從 '+start+' 出發，為其他地點選出最短路徑的前驅節點，並在圖上核對前驅邊。';
+  $('feedback').textContent='';
+  const badgeWidth=index===customIndex?64:45;
+  const width=Math.max(...Object.values(points).map(([x])=>x))+badgeWidth+21;
+  const height=index===5?422:Math.max(...Object.values(points).map(([,y])=>y))+47;
+  const layout=createGraphLayout(width,height);
+  $('graphViewport').style.setProperty('--graph-width',width+'px');
+  $('graph').replaceChildren();
+  svg('title',{id:'graph-title'},level.title+'，'+vertices.length+' 個地點，起點 '+start);
+  edgeNodes.clear();
+  nodeCircles.clear();
+  badges.clear();
+  const drawnEdges=[];
+  for(const [pair,w,dx,dy] of edges){
+    const [a,b]=pair,[x,y]=points[a],[u,v]=points[b];
+    const curve=index===5 && pair==='km';
+    const d=curve?'M 34 342 C 114 444 350 390 334 242':`M ${x} ${y} L ${u} ${v}`;
+    const edgeGroup=svg('g');
+    const road=svg('path',{d,class:'road'},'',edgeGroup);
+    edgeNodes.set(key(a,b),road);
+    road.dataset.pathStart=curve?b:a;
+    const length=road.getTotalLength();
+    for(let at=0;at<=length;at+=3){
+      const point=road.getPointAtLength(at);
+      layout.roadSamples.push({x:point.x,y:point.y,w:8,h:8});
+    }
+    drawnEdges.push({pair,w,dx,dy,road,edgeGroup,length,curve});
+  }
+  for(const {road,edgeGroup,length} of drawnEdges){
+    const candidates=[0.68,0.32,0.61,0.39,0.75,0.25,0.5,0.56,0.44,0.81,0.19].map(fraction=>{
+      const at=length*fraction;
+      const point=road.getPointAtLength(at);
+      return {x:point.x,y:point.y,at};
+    });
+    const center=layout.reserve(candidates,21,21,false);
+    if(!center) continue;
+    const at=candidates.find(point=>point.x===center.x && point.y===center.y).at;
+    for(const [direction,sign] of [['forward',1],['reverse',-1]]){
+      const next=road.getPointAtLength(at+sign);
+      const angle=Math.atan2(next.y-center.y,next.x-center.x)*180/Math.PI;
+      svg('path',{
+        d:'M 9 0 L -7 -6 L -7 6 Z',
+        transform:'translate('+center.x+' '+center.y+') rotate('+angle+')',
+        class:'edge-arrow '+direction,
+        'aria-hidden':'true'
+      },'',edgeGroup);
+    }
+  }
+  for(const {pair,w,dx,dy,road,length,curve} of drawnEdges){
+    const [a,b]=pair,[x,y]=points[a],[u,v]=points[b];
+    const midpoint=road.getPointAtLength(length/2);
+    const span=Math.hypot(u-x,v-y);
+    const offsetX=dx ?? Math.abs(v-y)/span*-18;
+    const offsetY=dy ?? Math.abs(u-x)/span*-18;
+    const preferred={x:curve?234:(x+u)/2+offsetX,y:curve?391:(y+v)/2+offsetY};
+    const alternatives=[0.5,0.38,0.62,0.27,0.73].flatMap(fraction=>{
+      const point=road.getPointAtLength(length*fraction);
+      const next=road.getPointAtLength(length*fraction+1);
+      const tangent=Math.atan2(next.y-point.y,next.x-point.x);
+      return [20,-20,27,-27].map(offset=>({x:point.x-Math.sin(tangent)*offset,y:point.y+Math.cos(tangent)*offset}));
+    });
+    const label=layout.label([preferred,...alternatives,...radialCandidates(midpoint.x,midpoint.y,[30,38])],Math.max(17,String(w).length*11+7),23);
+    svg('text',{x:label.x,y:label.y+6,class:'weight'},label.overflow?a+'–'+b+'：'+w:String(w));
+  }
+  for(const v of vertices){
+    const [x,y]=points[v];
+    const node=svg('g');
+    node.setAttribute('class','edit-node');
+    node.setAttribute('role','button');
+    node.onclick=()=>clickNode(v);
+    node.onkeydown=event=>{
+      if(event.key==='Enter' || event.key===' '){
+        event.preventDefault();
+        clickNode(v);
+      }
+    };
+    svg('circle',{cx:x,cy:y,r:23,fill:'transparent'},'',node);
+    nodeCircles.set(v,svg('circle',{cx:x,cy:y,r:15,class:'node'+(v===start?' source':'')},'',node));
+    if(v===start){
+      svg('circle',{cx:x,cy:y,r:20,class:'source-ring'},'',node);
+      const label=layout.label([{x,y:y+36},...radialCandidates(x,y,[38,48,58])],36,18);
+      svg('text',{x:label.x,y:label.y+4,class:'source-tag'},label.overflow?'起點 '+v:'起點',node);
+    }
+    svg('path',{d:mathGlyphs[v],transform:'translate('+x+' '+y+')',class:'vertex','aria-hidden':'true'},'',node);
+  }
+  for(const [v,[x,y]] of Object.entries(points)){
+    const placed=layout.label(radialCandidates(x,y,[36,45,54,63]),badgeWidth+8,24);
+    const recordWidth=placed.overflow?96:badgeWidth;
+    const group=svg('g',{class:'badge',hidden:'',transform:'translate('+(placed.x-recordWidth/2)+' '+(placed.y-9.5)+')'});
+    svg('rect',{width:recordWidth,height:19,rx:4},'',group);
+    const label=svg('text',{x:recordWidth/2,y:13.5},'',group);
+    group.onclick=()=>clickNode(v);
+    badges.set(v,{group,label,prefix:placed.overflow?v+'：':''});
+  }
+  $('graph').setAttribute('viewBox','0 -10 '+width+' '+(layout.bottom()+10));
+  $('roads').textContent=edges.map(([pair,w])=>pair.split('').join('–')+'：'+w+' 分鐘').join('；');
+  stepIndex=-1;
+  renderStep();
+  renderNavigation();
+}
+function renderNavigation(){
+  [...$('levels').children].forEach((button,index)=>{
+    button.setAttribute('aria-current',String(index===active));
+    button.textContent=(index+1)+'. '+labels[index]+(currentProgress(index).done?' ✓':'');
+  });
+}
+function showTree(prev,fixed=[],current=null,changed=[]){
+  const selected=new Set(Object.entries(prev).map(([v,parent])=>key(v,parent)));
+  const updated=new Set(changed.map(v=>key(v,prev[v])));
+  for(const [edge,path] of edgeNodes){
+    path.classList.toggle('tree',selected.has(edge));
+    path.classList.toggle('updated',updated.has(edge));
+  }
+  for(const [vertex,circle] of nodeCircles){
+    circle.classList.toggle('settled',fixed.includes(vertex));
+    circle.classList.toggle('current',vertex===current);
+  }
+}
+let stepIndex=-1;
+let editingVertex=null;
+function clickNode(v){
+  if(stepIndex!==-1) return;
+  if(editingVertex===v){
+    closeEditor(true);
+    return;
+  }
+  if(editingVertex!==null && neighbors(editingVertex).some(([neighbor])=>neighbor===v)){
+    if(setParent(editingVertex,v)) closeEditor(true);
+    return;
+  }
+  if(v===start) return;
+  editingVertex=v;
+  $('editorTitle').textContent='節點 '+v;
+  $('editorParent').replaceChildren(...['',...neighbors(v).map(([u])=>u).sort()].map(parent=>{
+    const option=el('option',parent || '—');
+    option.value=parent;
+    return option;
+  }));
+  $('editorParent').value=parents[v] ?? '';
+  renderEditor();
+}
+function renderEditor(){
+  const editing=editingVertex!==null;
+  $('nodeEditor').hidden=!editing;
+  const candidates=editing?neighbors(editingVertex).map(([v])=>v):[];
+  for(const [v,circle] of nodeCircles){
+    const button=circle.parentNode;
+    button.classList.toggle('selected',v===editingVertex);
+    button.classList.toggle('candidate',candidates.includes(v));
+    button.setAttribute('tabindex',stepIndex===-1 && (v!==start || candidates.includes(v))?'0':'-1');
+  }
+  const parent=editing?(parents[editingVertex] ?? ''):'';
+  const edgeKey=parent?key(editingVertex,parent):null;
+  for(const [edge,path] of edgeNodes) path.classList.toggle('draft',edge===edgeKey);
+  if(editing) $('editorStatus').textContent='目前紀錄：'+badges.get(editingVertex).label.textContent;
+}
+function closeEditor(restoreFocus=false){
+  const previous=editingVertex;
+  editingVertex=null;
+  renderEditor();
+  if(restoreFocus && previous!==null) nodeCircles.get(previous)?.parentNode.focus({preventScroll:true});
+}
+function setParent(vertex,parent){
+  for(let v=parent;v;v=parents[v]){
+    if(v===vertex){
+      if(editingVertex===vertex) $('editorParent').value=parents[vertex] ?? '';
+      const status=editingVertex===vertex?'editorStatus':'feedback';
+      $(status).textContent='這個前驅會形成循環，請選另一個相鄰節點。';
+      return false;
+    }
+  }
+  parents[vertex]=parent;
+  if(editingVertex===vertex) $('editorParent').value=parent;
+  $('feedback').textContent='';
+  showTree({});
+  updateStudentGraph();
+  renderEditor();
+  return true;
+}
+$('editorParent').addEventListener('change',()=>{
+  if(editingVertex!==null) setParent(editingVertex,$('editorParent').value);
+});
+$('closeNode').onclick=()=>closeEditor(true);
+$('nodeForm').addEventListener('keydown',event=>{
+  if(event.key==='Escape'){
+    event.preventDefault();
+    closeEditor(true);
+  }
+});
+function studentDistances(){
+  const distances={[start]:0};
+  function distanceTo(v){
+    if(v in distances) return distances[v];
+    const parent=parents[v];
+    const edge=parent && neighbors(v).find(([u])=>u===parent);
+    return distances[v]=edge?distanceTo(parent)+edge[1]:Infinity;
+  }
+  for(const v of vertices) distanceTo(v);
+  return distances;
+}
+function updateStudentGraph(){
+  if(stepIndex!==-1) return;
+  const distances=studentDistances();
+  const chosen=new Map();
+  for(const [v,parent] of Object.entries(parents)){
+    if(parent) chosen.set(key(v,parent),parent);
+  }
+  for(const [edge,path] of edgeNodes){
+    const parent=chosen.get(edge);
+    path.classList.toggle('chosen',Boolean(parent));
+    path.dataset.direction=parent===path.dataset.pathStart?'forward':'reverse';
+    path.classList.remove('correct','incorrect');
+  }
+  for(const [v,{group,label,prefix}] of badges){
+    const distance=format(distances[v]);
+    const parent=parents[v] || '—';
+    label.textContent=prefix+distance+'｜'+parent;
+    group.classList.remove('fixed','current','updated');
+    group.classList.toggle('student',true);
+    nodeCircles.get(v).parentNode.setAttribute('aria-label',(v===start?'起點 ':'節點 ')+v+'，目前距離 '+distance+'，前驅 '+parent);
+  }
+}
+
+function renderStep(){
+  const state=steps[stepIndex];
+  closeEditor();
+  $('solution').hidden=$('hide').hidden=!state;
+  $('graphLegend').hidden=!state;
+  $('studentLegend').hidden=Boolean(state);
+  $('checkPanel').hidden=Boolean(state);
+  if(state) for(const path of edgeNodes.values()) path.classList.remove('chosen','correct','incorrect');
+  $('previous').hidden=!state;
+  $('previous').disabled=stepIndex<=0;
+  for(const [v,{group,label,prefix}] of badges){
+    group.removeAttribute('hidden');
+    nodeCircles.get(v).parentNode.setAttribute('aria-disabled',String(Boolean(state)));
+    if(!state) continue;
+    group.classList.remove('student');
+    label.textContent=prefix+format(state.dist[v])+'｜'+(state.prev[v]??'—');
+    group.classList.toggle('fixed',state.fixed.includes(v));
+    group.classList.toggle('current',v===state.current);
+    group.classList.toggle('updated',state.changed.includes(v));
+  }
+  $('next').disabled=stepIndex===steps.length-1;
+  $('next').textContent=state?'下一步':'逐步演算';
+  if(!state){showTree({});updateStudentGraph();return;}
+  $('step').textContent=state.current?'第 '+stepIndex+' 步確定 '+state.current+'。確定順序：'+state.fixed.join(' → '):'初始狀態：起點距離為 0，其餘暫定距離為 ∞。';
+  $('updates').textContent=state.updates.length?'本步更新 '+state.updates.join('；'):state.current?'本步沒有更新距離。':'';
+  const seen=new Set(state.fixed);
+  $('trace').replaceChildren(...vertices.map(v=>{
+    const row=el('tr');
+    row.append(el('th',v),el('td',format(state.dist[v])),el('td',state.prev[v]??'—'),el('td',seen.has(v)?'已確定':'暫定'));
+    return row;
+  }));
+  showTree(state.prev,state.fixed,state.current,state.changed);
+}
+$('previous').onclick=()=>{stepIndex--;renderStep();};
+$('next').onclick=()=>{stepIndex++;renderStep();};
+$('answer').onclick=()=>{stepIndex=steps.length-1;renderStep();};
+$('hide').onclick=()=>{stepIndex=-1;renderStep();$('next').focus();};
+function checkAnswers(){
+  let correct=0,answered=0;
+  const grades=new Map();
+  const distances=studentDistances();
+  for(const [v,parent] of Object.entries(parents)){
+    if(!parent) continue;
+    const valid=distances[v]===final.dist[v];
+    answered++;
+    if(valid) correct++;
+    grades.set(key(v,parent),valid);
+  }
+  stepIndex=-1;
+  renderStep();
+  for(const [edge,valid] of grades){
+    edgeNodes.get(edge).classList.toggle('correct',valid);
+    edgeNodes.get(edge).classList.toggle('incorrect',!valid);
+  }
+  const total=vertices.length-1;
+  const done=correct===total;
+  if(done) currentProgress(active).done=true;
+  renderNavigation();
+  const summary=done?'全部正確。綠色邊構成最短路徑樹。':`已為 ${answered}／${total} 個非起點頂點選擇前驅，其中 ${correct} 個已達最短距離。`;
+  $('feedback').textContent=(answered===0?'還沒選前驅。請先點圖上要更新的頂點，再選一個相鄰頂點作為前驅。':summary);
+}
+$('checkAnswer').addEventListener('click',checkAnswers);
+$('clearAnswer').addEventListener('click',()=>{
+  parents=currentProgress(active).answers={};
+  currentProgress(active).done=false;
+  renderNavigation();
+  $('feedback').textContent='';
+  stepIndex=-1;
+  renderStep();
+});
+function updateCustomStarts(){
+  const count=Number($('customCount').value);
+  if(!Number.isInteger(count) || count<2 || count>customLetters.length) return;
+  const names=[...customLetters.slice(0,count)];
+  const previous=$('customStart').value;
+  $('customStart').replaceChildren(...names.map(v=>{
+    const option=el('option',v);
+    option.value=v;
+    return option;
+  }));
+  $('customStart').value=names.includes(previous)?previous:names[0];
+}
+function applyCustom(){
+  const status=$('customStatus');
+  try {
+    levels[customIndex]=buildCustomLevel(Number($('customCount').value),$('customStart').value,$('customRoads').value);
+  } catch(error){
+    status.textContent=error.message;
+    status.classList.toggle('error',true);
+    return;
+  }
+  progress[customIndex]={start:levels[customIndex].start,byStart:{}};
+  selectLevel(customIndex);
+  status.classList.remove('error');
+  status.textContent='題目已更新，可以在圖上選擇前驅。';
+}
+$('customCount').addEventListener('input',updateCustomStarts);
+$('buildCustom').addEventListener('click',applyCustom);
+updateCustomStarts();
+levels.push(buildCustomLevel(Number($('customCount').value),$('customStart').value,$('customRoads').value));
+progress.push({start:levels[customIndex].start,byStart:{}});
+$('levelStart').addEventListener('change',()=>{
+  const selected=$('levelStart').value;
+  if(!vertices.includes(selected)) return;
+  progress[active].start=selected;
+  selectLevel(active);
+});
+const labels=['河岸入門','綠色通學','共享單車','接駁路網','物資配送','13 點挑戰','自訂題目'];
+levels.forEach((_,index)=>{
+  const button=el('button');
+  button.type='button';
+  button.onclick=()=>selectLevel(index);
+  $('levels').append(button);
+});
+$('zoomGraph').addEventListener('click',()=>{
+  const button=$('zoomGraph');
+  const expanded=button.getAttribute('aria-pressed')!=='true';
+  $('graphViewport').classList.toggle('expanded',expanded);
+  button.setAttribute('aria-pressed',String(expanded));
+  button.textContent=expanded?'縮回路網':'放大路網';
+  if(!expanded) $('graphViewport').scrollLeft=0;
+});
+selectLevel(0);
+</script>
+</body>
+</html>
